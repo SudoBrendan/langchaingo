@@ -120,11 +120,6 @@ func (s *Store) init(ctx context.Context) error {
 	if err := s.createEmbeddingTableIfNotExists(ctx, tx); err != nil {
 		return err
 	}
-	if s.preDeleteCollection {
-		if err := s.RemoveCollection(ctx, tx); err != nil {
-			return err
-		}
-	}
 	if err := s.createOrGetCollection(ctx, tx); err != nil {
 		return err
 	}
@@ -230,7 +225,28 @@ func (s Store) AddDocuments(
 	docs []schema.Document,
 	options ...vectorstores.Option,
 ) ([]string, error) {
+	// Drop our records before adding if we configured the pgvector option to do so.
+	//
+	// NOTE: if you use this option, only the last call to AddDocuments on your
+	//   client will persist.
+	if s.preDeleteCollection {
+		tx, err := s.conn.Begin(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.RemoveCollection(ctx, tx); err != nil {
+			return nil, err
+		}
+		if err := s.createOrGetCollection(ctx, tx); err != nil {
+			return nil, err
+		}
+		if err = tx.Commit(ctx); err != nil {
+			return nil, err
+		}
+	}
+
 	opts := s.getOptions(options...)
+
 	if opts.ScoreThreshold != 0 || opts.Filters != nil || opts.NameSpace != "" {
 		return nil, ErrUnsupportedOptions
 	}
