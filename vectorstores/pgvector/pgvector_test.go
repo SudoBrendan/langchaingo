@@ -400,7 +400,7 @@ func TestPgvectorAsRetriever(t *testing.T) {
 		ctx,
 		chains.NewRetrievalQAFromLLM(
 			llm,
-			vectorstores.ToRetriever(store, 1),
+			vectorstores.ToRetriever(&store, 1),
 		),
 		"What color is the desk?",
 	)
@@ -450,7 +450,7 @@ func TestPgvectorAsRetrieverWithScoreThreshold(t *testing.T) {
 		ctx,
 		chains.NewRetrievalQAFromLLM(
 			llm,
-			vectorstores.ToRetriever(store, 5, vectorstores.WithScoreThreshold(0.8)),
+			vectorstores.ToRetriever(&store, 5, vectorstores.WithScoreThreshold(0.8)),
 		),
 		"What colors is each piece of furniture next to the desk?",
 	)
@@ -528,7 +528,7 @@ func TestPgvectorAsRetrieverWithMetadataFilterNotSelected(t *testing.T) {
 		ctx,
 		chains.NewRetrievalQAFromLLM(
 			llm,
-			vectorstores.ToRetriever(store, 5),
+			vectorstores.ToRetriever(&store, 5),
 		),
 		"What color is the lamp in each room?",
 	)
@@ -602,7 +602,7 @@ func TestPgvectorAsRetrieverWithMetadataFilters(t *testing.T) {
 		ctx,
 		chains.NewRetrievalQAFromLLM(
 			llm,
-			vectorstores.ToRetriever(store,
+			vectorstores.ToRetriever(&store,
 				5,
 				vectorstores.WithFilters(filter))),
 		"What color is the lamp in each room?",

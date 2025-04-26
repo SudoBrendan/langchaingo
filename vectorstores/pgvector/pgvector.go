@@ -71,7 +71,7 @@ type HNSWIndex struct {
 	distanceFunction string
 }
 
-var _ vectorstores.VectorStore = Store{}
+var _ vectorstores.VectorStore = &Store{}
 
 // New creates a new Store with options.
 func New(ctx context.Context, opts ...Option) (Store, error) {
@@ -220,15 +220,12 @@ func (s Store) createEmbeddingTableIfNotExists(ctx context.Context, tx pgx.Tx) e
 
 // AddDocuments adds documents to the Postgres collection associated with 'Store'.
 // and returns the ids of the added documents.
-func (s Store) AddDocuments(
+func (s *Store) AddDocuments(
 	ctx context.Context,
 	docs []schema.Document,
 	options ...vectorstores.Option,
 ) ([]string, error) {
 	// Drop our records before adding if we configured the pgvector option to do so.
-	//
-	// NOTE: if you use this option, only the last call to AddDocuments on your
-	//   client will persist.
 	if s.preDeleteCollection {
 		tx, err := s.conn.Begin(ctx)
 		if err != nil {
@@ -243,6 +240,9 @@ func (s Store) AddDocuments(
 		if err = tx.Commit(ctx); err != nil {
 			return nil, err
 		}
+
+		// only drop the records once - we can only do this if we use a *Store
+		s.preDeleteCollection = false
 	}
 
 	opts := s.getOptions(options...)
@@ -285,7 +285,7 @@ func (s Store) AddDocuments(
 }
 
 //nolint:cyclop
-func (s Store) SimilaritySearch(
+func (s *Store) SimilaritySearch(
 	ctx context.Context,
 	query string,
 	numDocuments int,
